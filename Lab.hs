@@ -1,8 +1,7 @@
 {-# LANGUAGE GADTs #-}
 
 --         ∞
--- fix f = ⊔ fⁱ ⊥
---        i=0
+-- fix f = ⊔ fⁱ ⊥ i=0
 fix :: (a -> a) -> a
 fix f = f (fix f)
 
@@ -37,14 +36,14 @@ data Expr a where
   -- Comandos
   Skip   :: Expr Ω                                    -- skip
   Fail   :: Expr Ω                                    -- fail
-  Assign :: Iden -> Expr Int -> Expr Ω                 -- v := e
-  Newvar :: Iden -> Expr Int -> Expr Ω -> Expr Ω       -- newvar v := e in e'
+  Assign :: Iden -> Expr Int -> Expr Ω                -- v := e
+  Newvar :: Iden -> Expr Int -> Expr Ω -> Expr Ω      -- newvar v := e in e'
   IfElse :: Expr Bool -> Expr Ω -> Expr Ω -> Expr Ω   -- if b then c else c'
   While  :: Expr Bool -> Expr Ω -> Expr Ω             -- while b do c
   Seq    :: Expr Ω -> Expr Ω -> Expr Ω                -- c ; c'
   Catch  :: Expr Ω -> Expr Ω -> Expr Ω                -- catch c with c'
   Output :: Expr Int -> Expr Ω                        -- !e
-  Input  :: Iden -> Expr Ω                             -- ?v
+  Input  :: Iden -> Expr Ω                            -- ?v
     
 class DomSem dom where 
   sem :: Expr dom -> Σ -> dom
@@ -83,8 +82,16 @@ instance DomSem Bool where
 (+.) f (In g)      = In ((f +.) . g)
 
 instance DomSem Ω where
-  sem Skip σ = Normal σ
-  sem Fail σ = Abort σ
+  sem Skip            σ = Normal σ
+  sem Fail            σ = Abort σ
+  sem (Assign v e)    σ = Normal $ update σ v (sem e σ)
+  sem (IfElse b e e') σ = if sem b σ then sem e σ else sem e' σ
+  sem (Seq c c')      σ = (*.) (sem c') (sem c σ)
+  sem (Catch c c')    σ = (+.) (sem c') (sem c σ)
+  sem (Newvar v e c)  σ = (†.)
+    (\σ'-> update σ' v $ σ v)
+    (sem c $ update σ v $ sem e σ)
+--  sem Assign
 
 {- ################# Funciones de evaluación de dom ################# -}
 
