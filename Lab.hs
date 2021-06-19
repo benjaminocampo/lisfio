@@ -12,8 +12,9 @@ update :: Σ -> Iden -> Int -> Σ
 update σ v n v' = if v == v' then n else σ v'
 
 {- Ω ≈ (Σ' + Z × Ω + Z → Ω)⊥ -}
-data Ω = Normal Σ | Abort Σ | Out (Int, Ω) | In (Int -> Ω)
+data Ω = Normal Σ | Abort Σ | Out (Int, Ω) | In (Int -> Ω) | Bottom
 {- Notar:
+   * Bottom : Ω
    * Normal : Σ → Ω
    * Abort  : Σ → Ω
    * Out    : (Z, Ω) → Ω
@@ -64,18 +65,21 @@ instance DomSem Bool where
 
 
 (*.) :: (Σ -> Ω) -> Ω -> Ω
+(*.) _ Bottom      = Bottom
 (*.) f (Normal σ)  = f σ
 (*.) _ (Abort σ)   = Abort σ
 (*.) f (Out (n,ω)) = Out (n, f *. ω)
 (*.) f (In g)      = In ((f *.) . g)
 
 (†.) :: (Σ -> Σ) -> Ω -> Ω
+(†.) _ Bottom      = Bottom
 (†.) f (Normal σ)  = Normal $ f σ
 (†.) f (Abort σ)   = Abort $ f σ
 (†.) f (Out (n,ω)) = Out (n, f †. ω)
 (†.) f (In g)      = In ((f †.) . g)
 
 (+.) :: (Σ -> Ω) -> Ω -> Ω
+(+.) _ Bottom     = Bottom
 (+.) _ (Normal σ)  = Normal σ
 (+.) f (Abort σ)   = f σ
 (+.) f (Out (n,ω)) = Out (n, f +. ω)
@@ -91,7 +95,10 @@ instance DomSem Ω where
   sem (Newvar v e c)  σ = (†.)
     (\σ'-> update σ' v $ σ v)
     (sem c $ update σ v $ sem e σ)
---  sem Assign
+  sem (Output e)      σ = Out (sem e σ, Normal σ)
+  sem (Input v)       σ = In $ \n -> Normal $ update σ v n
+  sem (While b c)     σ = fix f σ
+    where f w σ = if sem b σ then (*.) w (sem c σ) else Normal σ
 
 {- ################# Funciones de evaluación de dom ################# -}
 
