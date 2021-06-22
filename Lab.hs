@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs #-}
 
+module Lab where
 --         ∞
 -- fix f = ⊔ fⁱ ⊥ i=0
 fix :: (a -> a) -> a
@@ -29,11 +30,17 @@ data Expr a where
   Minus  :: Expr Int -> Expr Int -> Expr Int          -- e - e'
   Prod   :: Expr Int -> Expr Int -> Expr Int          -- e * e'
   Div    :: Expr Int -> Expr Int -> Expr Int          -- e / e'
+  Mod    :: Expr Int -> Expr Int -> Expr Int          -- e % e'
   -- Expresiones booleanas
   Eq     :: Expr Int -> Expr Int -> Expr Bool         -- e = e'
   NotEq  :: Expr Int -> Expr Int -> Expr Bool         -- e /= e'
   Lt     :: Expr Int -> Expr Int -> Expr Bool         -- e < e'
   Lte    :: Expr Int -> Expr Int -> Expr Bool         -- e <= e'
+  Gt     :: Expr Int -> Expr Int -> Expr Bool         -- e > e'
+  Gte    :: Expr Int -> Expr Int -> Expr Bool         -- e >= e'
+  Not    :: Expr Bool -> Expr Bool                    -- ¬e
+  Or     :: Expr Bool -> Expr Bool -> Expr Bool       -- e ∨ e' 
+  And    :: Expr Bool -> Expr Bool -> Expr Bool       -- e ∧ e' 
   -- Comandos
   Skip   :: Expr Ω                                    -- skip
   Fail   :: Expr Ω                                    -- fail
@@ -43,25 +50,31 @@ data Expr a where
   While  :: Expr Bool -> Expr Ω -> Expr Ω             -- while b do c
   Seq    :: Expr Ω -> Expr Ω -> Expr Ω                -- c ; c'
   Catch  :: Expr Ω -> Expr Ω -> Expr Ω                -- catch c with c'
-  Output :: Expr Int -> Expr Ω                        -- !e
-  Input  :: Iden -> Expr Ω                            -- ?v
-    
+  SOut   :: Expr Int -> Expr Ω                        -- !e
+  SIn    :: Iden -> Expr Ω                            -- ?v
+
 class DomSem dom where 
   sem :: Expr dom -> Σ -> dom
 
 instance DomSem Int where
-  sem (Const a)     _ = a
-  sem (Var v)       σ = σ v
-  sem (Plus e1 e2)  σ = sem e1 σ + sem e2 σ
-  sem (Minus e1 e2) σ = sem e1 σ - sem e2 σ
-  sem (Prod e1 e2)  σ = sem e1 σ * sem e2 σ
-  sem (Div e1 e2)   σ = sem e1 σ `div` sem e2 σ
+  sem (Const a)    _ = a
+  sem (Var v)      σ = σ v
+  sem (Plus e e')  σ = sem e σ + sem e' σ
+  sem (Minus e e') σ = sem e σ - sem e' σ
+  sem (Prod e e')  σ = sem e σ * sem e' σ
+  sem (Div e e')   σ = sem e σ `div` sem e' σ
+  sem (Mod e e')   σ = sem e σ `mod` sem e' σ
 
 instance DomSem Bool where
-  sem (Eq e1 e2)    σ = sem e1 σ == sem e2 σ
-  sem (NotEq e1 e2) σ = sem e1 σ /= sem e2 σ
-  sem (Lt e1 e2)    σ = sem e1 σ < sem e2 σ
-  sem (Lte e1 e2)   σ = sem e1 σ <= sem e2 σ
+  sem (Eq e e')    σ = sem e σ == sem e' σ
+  sem (NotEq e e') σ = sem e σ /= sem e' σ
+  sem (Lt e e')    σ = sem e σ < sem e' σ
+  sem (Lte e e')   σ = sem e σ <= sem e' σ
+  sem (Gt e e')    σ = sem e σ > sem e' σ
+  sem (Gte e e')   σ = sem e σ >= sem e' σ
+  sem (Not e)      σ = not $ sem e σ
+  sem (Or e e')    σ = sem e σ || sem e' σ
+  sem (And e e')   σ = sem e σ && sem e' σ
 
 
 (*.) :: (Σ -> Ω) -> Ω -> Ω
@@ -88,15 +101,15 @@ instance DomSem Bool where
 instance DomSem Ω where
   sem Skip            σ = Normal σ
   sem Fail            σ = Abort σ
-  sem (Assign v e)    σ = Normal $ update σ v (sem e σ)
+  sem (Assign v e)    σ = Normal $ update σ v $ sem e σ
   sem (IfElse b e e') σ = if sem b σ then sem e σ else sem e' σ
   sem (Seq c c')      σ = (*.) (sem c') (sem c σ)
   sem (Catch c c')    σ = (+.) (sem c') (sem c σ)
   sem (Newvar v e c)  σ = (†.)
     (\σ'-> update σ' v $ σ v)
     (sem c $ update σ v $ sem e σ)
-  sem (Output e)      σ = Out (sem e σ, Normal σ)
-  sem (Input v)       σ = In $ \n -> Normal $ update σ v n
+  sem (SOut e)        σ = Out (sem e σ, Normal σ)
+  sem (SIn v)         σ = In $ \n -> Normal $ update σ v n
   sem (While b c)     σ = fix f σ
     where f w σ = if sem b σ then (*.) w (sem c σ) else Normal σ
 
