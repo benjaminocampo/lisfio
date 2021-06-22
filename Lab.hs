@@ -13,9 +13,8 @@ update :: Σ -> Iden -> Int -> Σ
 update σ v n v' = if v == v' then n else σ v'
 
 {- Ω ≈ (Σ' + Z × Ω + Z → Ω)⊥ -}
-data Ω = Normal Σ | Abort Σ | Out (Int, Ω) | In (Int -> Ω) | Bottom
+data Ω = Normal Σ | Abort Σ | Out (Int, Ω) | In (Int -> Ω)
 {- Notar:
-   * Bottom : Ω
    * Normal : Σ → Ω
    * Abort  : Σ → Ω
    * Out    : (Z, Ω) → Ω
@@ -64,7 +63,9 @@ instance DomSem Int where
   sem (Plus e e')  σ = sem e σ + sem e' σ
   sem (Minus e e') σ = sem e σ - sem e' σ
   sem (Prod e e')  σ = sem e σ * sem e' σ
-  sem (Div e e')   σ = sem e σ `div` sem e' σ
+  sem (Div e e')   σ = if sem e' σ /= 0
+    then sem e σ `div` sem e' σ
+    else 0
   sem (Mod e e')   σ = sem e σ `mod` sem e' σ
 
 instance DomSem Bool where
@@ -82,21 +83,18 @@ instance DomSem Bool where
 
 
 (*.) :: (Σ -> Ω) -> Ω -> Ω
-(*.) _ Bottom      = Bottom
 (*.) f (Normal σ)  = f σ
 (*.) _ (Abort σ)   = Abort σ
 (*.) f (Out (n,ω)) = Out (n, f *. ω)
 (*.) f (In g)      = In ((f *.) . g)
 
 (†.) :: (Σ -> Σ) -> Ω -> Ω
-(†.) _ Bottom      = Bottom
 (†.) f (Normal σ)  = Normal $ f σ
 (†.) f (Abort σ)   = Abort $ f σ
 (†.) f (Out (n,ω)) = Out (n, f †. ω)
 (†.) f (In g)      = In ((f †.) . g)
 
 (+.) :: (Σ -> Ω) -> Ω -> Ω
-(+.) _ Bottom      = Bottom
 (+.) _ (Normal σ)  = Normal σ
 (+.) f (Abort σ)   = f σ
 (+.) f (Out (n,ω)) = Out (n, f +. ω)
@@ -107,11 +105,9 @@ instance DomSem Ω where
   sem Fail            σ = Abort σ
   sem (Assign v e)    σ = Normal $ update σ v $ sem e σ
   sem (IfElse b e e') σ = if sem b σ then sem e σ else sem e' σ
-  sem (Seq c c')      σ = (*.) (sem c') (sem c σ)
-  sem (Catch c c')    σ = (+.) (sem c') (sem c σ)
-  sem (Newvar v e c)  σ = (†.)
-    (\σ'-> update σ' v $ σ v)
-    (sem c $ update σ v $ sem e σ)
+  sem (Seq c c')      σ = (sem c') *. (sem c σ)
+  sem (Catch c c')    σ = (sem c') +. (sem c σ)
+  sem (Newvar v e c)  σ = (\σ'-> update σ' v $ σ v) †. (sem c $ update σ v $ sem e σ)
   sem (SOut e)        σ = Out (sem e σ, Normal σ)
   sem (SIn v)         σ = In $ \n -> Normal $ update σ v n
   sem (While b c)     σ = fix f σ

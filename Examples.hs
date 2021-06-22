@@ -6,7 +6,7 @@ concatSeq = foldr Seq Skip
 
 x    = Var "x"
 y    = Var "y"
-cero = Const 0
+zero = Const 0
 one  = Const 1
 two  = Const 2
 ten  = Const 10
@@ -44,7 +44,7 @@ printUptoTen = While (Lte x ten) $ concatSeq
   od
 -}
 getUptoTen :: Expr Ω
-getUptoTen = While (Lt y ten) $ concatSeq 
+getUptoTen = While (Lte y ten) $ concatSeq 
   [ (SIn "x")
   , (SOut $ x)
   , (SOut $ y)
@@ -72,6 +72,7 @@ getAndRestore = concatSeq
   , (Newvar "x" ten $ SOut x)
   , (SOut $ x)
   ]
+
 {-
   catch x := 1; Fail with x := 2
 -}
@@ -89,8 +90,8 @@ whileTruePrint = While STrue $ SOut x
 {-
   x / 0
 -}
-divideByCero :: Expr Int
-divideByCero = Div x cero
+divideByZero :: Expr Int
+divideByZero = Div x zero
 
 {-
   while x < 2 do
@@ -100,8 +101,8 @@ divideByCero = Div x cero
 -}
 g4ex5a :: Expr Ω
 g4ex5a = While (Lt x two) $
-  IfElse (Lt x cero)
-    (Assign "x" cero)
+  IfElse (Lt x zero)
+    (Assign "x" zero)
     (Assign "x" $ Plus x one)
 
 {-
@@ -112,7 +113,7 @@ g4ex5a = While (Lt x two) $
 -}
 g4ex5b :: Expr Ω
 g4ex5b = While (Lt x two) $
-  IfElse (Eq y cero)
+  IfElse (Eq y zero)
     (Assign "x" $ Plus x one)
     Skip
 
@@ -124,7 +125,7 @@ g4ex5b = While (Lt x two) $
 g5ex3a :: Expr Ω
 g5ex3a = Seq
   (Assign "y" $ Plus x y)
-  (IfElse (Gt y cero) (Assign "x" $ Minus x one) Skip)
+  (IfElse (Gt y zero) (Assign "x" $ Minus x one) Skip)
 
 {-
   while x > 0 do
@@ -133,7 +134,7 @@ g5ex3a = Seq
     else skip
 -}
 g5ex3b :: Expr Ω
-g5ex3b = While (Gt x cero) g5ex3a
+g5ex3b = While (Gt x zero) g5ex3a
 
 {-
   while b do fail
@@ -155,7 +156,7 @@ g5ex2dii b = IfElse b Fail Skip
 -}
 g5ex2ei :: Expr Ω
 g5ex2ei = Seq
-  (Assign "x" cero)
+  (Assign "x" zero)
   (Catch (While (Lt x one) Fail) (Assign "x" one))
 
 {-
@@ -165,5 +166,5 @@ g5ex2ei = Seq
 -}
 g5ex2eii :: Expr Ω
 g5ex2eii = Seq
-  (Assign "x" cero)
+  (Assign "x" zero)
   (While (Lt x one) (Catch Fail $ Assign "x" one))

@@ -11,7 +11,7 @@ checkStates ω ω' = all (statesEq ω ω') vars
 
 rollOut :: [Int] -> Ω -> Ω
 rollOut []     ω = ω
-rollOut (x:xs) ω = Out (x, rollOut xs ω)
+rollOut (n:ns) ω = Out (n, rollOut ns ω)
 
 statesEq :: Ω -> Ω -> Iden -> Bool
 statesEq (Normal σ) (Normal σ')      v = σ v == σ' v
@@ -23,10 +23,11 @@ statesEq (In g) (In g')              v = all
 statesEq _ _ _                         = False
 
 testProperties = TestLabel "Properties" $ TestList 
-  [ testDivideByCero
+  [ testDivideByZero
   , testAssignAndRestore
   , testGiveControlAfterFail
   , testPrintUptoTen 
+  , testGetAndRestore
   ]
 
 testExercises  = TestLabel "Exercises" $ TestList
@@ -38,9 +39,9 @@ testExercises  = TestLabel "Exercises" $ TestList
   , testg5ex2e
   ]
 
-testDivideByCero = TestCase $
+testDivideByZero = TestCase $
   assertEqual "should return default value for divition"
-    (sem divideByCero σ)
+    (sem divideByZero σ)
     0
 
 testAssignWithIfElse = TestCase $ do 
@@ -70,6 +71,12 @@ testGiveControlAfterFail = TestCase $
     checkStates
       (sem giveControlAfterFail σ)
       (Normal $ update σ "x" 2)
+
+testGetAndRestore = TestCase $
+  assertBool "should input before newvar and output values after restoration" $
+    checkStates
+      (sem getAndRestore σ)
+      (In $ \n -> Out(10, Out(n, Normal $ update σ "x" n)))
 
 testg4ex5a = TestCase $ do
   assertBool "should fail if states differs: g4ex5a" $
@@ -104,17 +111,17 @@ testg5ex3b = TestCase $
       (Normal $ update σ "y" 4)
 
 testg5ex2d = TestCase $ do
-  assertBool "should fail if property doesn't hold: g5ex2d" $
+  assertBool "should fail if commands aren't equivalent: g5ex2d" $
     checkStates
       (sem (g5ex2di STrue) σ)
       (sem (g5ex2dii STrue) σ)
-  assertBool "should fail if property doesn't hold: g5ex2d" $
+  assertBool "should fail if commands aren't equivalent: g5ex2d" $
     checkStates
       (sem (g5ex2di SFalse) σ)
       (sem (g5ex2di SFalse) σ)
 
 testg5ex2e = TestCase $
-  assertBool "should fail if property doesn't hold: g5ex2e" $
+  assertBool "should fail if commands aren't equivalent: g5ex2e" $
     checkStates
       (sem g5ex2ei σ)
       (sem g5ex2eii σ)
