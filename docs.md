@@ -4,10 +4,11 @@
 
 Los constructores sintácticos correspondientes al lenguaje de expresiones
 enteras y booleanas pueden verse en la definición del tipo `Expr a` junto a su
-función semántica en `DomSem Int` y `DomSem Bool`. Algo a considerar es la
-implementación de la semántica de `Div`, donde para el caso de la división por 0
-se eligió un valor arbitrario como resultado de esta operación similar a la
-convención que se trabajó durante la matería para el lenguaje imperativo simple.
+función semántica en `DomSem Int` y `DomSem Bool` en el archivo `Lab.hs`. Algo a
+considerar es la implementación de la semántica de `Div`, donde para el caso de
+la división por `0` se eligió un valor arbitrario como resultado de esta
+operación. Esto es con el fin de seguir la convención que se trabajó durante la
+matería para el lenguaje imperativo simple.
 
 ## Constructores sintácticos para `<comm>`
 
@@ -16,13 +17,14 @@ los comandos puede encontrarse en `Expr a` y `DomSem Ω`.
 
 ## Casos de Tests
 
-Para verificar que la implementación se realizaron casos de tests utilizando
-`HUnit` y pueden verse en `Tests.hs`. La definición de los ejemplos empleados se encuentran en `Examples.hs` donde se pone énfasis en propiedades que la
-implementación debe cumplir, y ejercicios de las guías que requerían calculo de
-semánticas. A su vez, los ejemplos fueron agregados en su forma de evaluación en
-`Eval.hs` para visualizar aquellos que producían output, solicitaban input, o no
-realizaban ninguna de estas acciones. Para la ejecución de los tests basta con
-ejecutar lo siguiente por terminal de comandos:
+Para verificar la implementación, se realizaron casos de tests utilizando
+`HUnit` y pueden verse en `Tests.hs`. La definición de los ejemplos empleados se
+encuentran en `Examples.hs`, poniendo énfasis en propiedades que la
+implementación debe cumplir, y ejercicios de las guías prácticas que requerían
+calculo de semánticas. A su vez, los ejemplos fueron agregados en su forma de
+evaluación en `Eval.hs` para visualizar aquellos que producen *output*,
+solicitan *input*, o no realizan ninguna de estas acciones. Para la corrida
+de los tests basta con ejecutar lo siguiente por terminal de comandos:
 
 ```haskell
 ghci Tests.hs 
@@ -36,13 +38,12 @@ Counts {cases = 11, tried = 11, errors = 0, failures = 0}
 
 En la implementación de la función semántica, la representación de `⊥` está dada
 por la no terminación de la sentencia `While`, a diferencia de la definición
-teórica donde tal comportamiento se distinguía con un elemento del domínio. Si
+teórica donde tal comportamiento se distinguía con un elemento del dominio. Si
 bien, se podría agregar a la definición de `Ω` un constructor `Bottom`, y
 expandir los operadores de transferencia de control `(*.)`, `(†.)`, `(+.)` como
-muestra el siguiente ejemplo, no se podrían expresar comandos que al obtener su
-semántica obtengamos dicho constructor ya que para ello deberíamos determinar
-cuando un comando terminaría.
-
+muestra el siguiente ejemplo, no se podrían expresar comandos que al calcular su
+semántica se obtenga dicho constructor ya que primero se debería determinar su
+terminación.
 
 ```haskell
 data Ω = Normal Σ | Abort Σ | Out (Int, Ω) | In (Int -> Ω) | Bottom
@@ -123,5 +124,5 @@ bot = fix f
 Esto nos dice que la función constantenemente `⊥` es aquella que para cada
 estado `σ` la función `f` no altera lo suficiente el estado como para que `fix`
 se detenga y por lo tanto continúa otra iteración indefinidamente. Finalmente,
-removiendo los estados σ en ambos lados de la igualdad se obtiene la definición
+removiendo los estados `σ` en ambos lados de la igualdad se obtiene la definición
 de `⊥` que se buscaba.
