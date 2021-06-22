@@ -87,6 +87,16 @@ whileTruePrint :: Expr Ω
 whileTruePrint STrue $ SOut x
 
 {-
+  x := x / 0
+-}
+divideByCero :: Expr Ω
+divideByCero = Assign "x" $ Div x cero
+
+{-
+  
+-}
+
+{-
   while x < 2 do
     if x < 0 then x := 0
     else x:= x + 1
@@ -141,7 +151,6 @@ g5ex4 = Newvar "x" two $
   While (Gt x cero) $ Seq
     (Assign "y" $ Plus x y)
     (IfElse (Gt y cero) (Assign "x" $ Minus x one) Skip)
-
 
 {-
   x := 0;
