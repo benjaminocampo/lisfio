@@ -73,28 +73,24 @@ getAndRestore = concatSeq
   , (SOut $ x)
   ]
 {-
-  catch x := 1; Fail with x := 0
+  catch x := 1; Fail with x := 2
 -}
-giveControlToFail :: Expr Ω
-giveControlToFail = Catch
+giveControlAfterFail :: Expr Ω
+giveControlAfterFail = Catch
   (Seq (Assign "x" one) Fail)
-  (Assign "x" cero)
+  (Assign "x" two)
 
 {-
   while True do !x
 -}
 whileTruePrint :: Expr Ω
-whileTruePrint STrue $ SOut x
+whileTruePrint = While STrue $ SOut x
 
 {-
-  x := x / 0
+  x / 0
 -}
-divideByCero :: Expr Ω
-divideByCero = Assign "x" $ Div x cero
-
-{-
-  
--}
+divideByCero :: Expr Int
+divideByCero = Div x cero
 
 {-
   while x < 2 do
@@ -116,7 +112,7 @@ g4ex5a = While (Lt x two) $
 -}
 g4ex5b :: Expr Ω
 g4ex5b = While (Lt x two) $
-  IfElse (Eq y cero) $
+  IfElse (Eq y cero)
     (Assign "x" $ Plus x one)
     Skip
 
@@ -137,39 +133,37 @@ g5ex3a = Seq
     else skip
 -}
 g5ex3b :: Expr Ω
-g5ex3b = While (Gt x 0) g5ex3a
+g5ex3b = While (Gt x cero) g5ex3a
 
 {-
-  newvar x:= 2 in
-    while x > 0 do
-      y:= x + y;
-      if y > 0 then x := x -1
-      else skip
+  while b do fail
 -}
-g5ex4 :: Expr Ω
-g5ex4 = Newvar "x" two $
-  While (Gt x cero) $ Seq
-    (Assign "y" $ Plus x y)
-    (IfElse (Gt y cero) (Assign "x" $ Minus x one) Skip)
+g5ex2di :: Expr Bool -> Expr Ω
+g5ex2di b = While b Fail
+{-
+  if b then fail else skip
+-}
+g5ex2dii :: Expr Bool -> Expr Ω
+g5ex2dii b = IfElse b Fail Skip
 
 {-
   x := 0;
   catch
     while x < 1 do fail od
   with
-    x:= 0
+    x:= 1
 -}
 g5ex2ei :: Expr Ω
 g5ex2ei = Seq
   (Assign "x" cero)
-  (Catch (While (Lt x one) Fail) (Assign "x" cero))
+  (Catch (While (Lt x one) Fail) (Assign "x" one))
 
 {-
   x := 0;
   while x < 1 do
     catch fail with x := 1
 -}
-g5ex2ei :: Expr Ω
-g5ex2ei = Seq
+g5ex2eii :: Expr Ω
+g5ex2eii = Seq
   (Assign "x" cero)
   (While (Lt x one) (Catch Fail $ Assign "x" one))

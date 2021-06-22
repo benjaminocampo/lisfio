@@ -65,7 +65,7 @@ instance DomSem Int where
   sem (Minus e e') σ = sem e σ - sem e' σ
   sem (Prod e e')  σ = sem e σ * sem e' σ
   sem (Div e e')   σ = sem e σ `div` sem e' σ
-  sem (Mod e e')   σ = sem e σ `mod` sem e'
+  sem (Mod e e')   σ = sem e σ `mod` sem e' σ
 
 instance DomSem Bool where
   sem (STrue)      σ = True
