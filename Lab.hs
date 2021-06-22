@@ -32,6 +32,8 @@ data Expr a where
   Div    :: Expr Int -> Expr Int -> Expr Int          -- e / e'
   Mod    :: Expr Int -> Expr Int -> Expr Int          -- e % e'
   -- Expresiones booleanas
+  STrue  :: Expr Bool                                 -- true
+  SFalse :: Expr Bool                                 -- false
   Eq     :: Expr Int -> Expr Int -> Expr Bool         -- e = e'
   NotEq  :: Expr Int -> Expr Int -> Expr Bool         -- e /= e'
   Lt     :: Expr Int -> Expr Int -> Expr Bool         -- e < e'
@@ -63,9 +65,11 @@ instance DomSem Int where
   sem (Minus e e') σ = sem e σ - sem e' σ
   sem (Prod e e')  σ = sem e σ * sem e' σ
   sem (Div e e')   σ = sem e σ `div` sem e' σ
-  sem (Mod e e')   σ = sem e σ `mod` sem e' σ
+  sem (Mod e e')   σ = sem e σ `mod` sem e'
 
 instance DomSem Bool where
+  sem (STrue)      σ = True
+  sem (SFalse)     σ = False
   sem (Eq e e')    σ = sem e σ == sem e' σ
   sem (NotEq e e') σ = sem e σ /= sem e' σ
   sem (Lt e e')    σ = sem e σ < sem e' σ
@@ -92,7 +96,7 @@ instance DomSem Bool where
 (†.) f (In g)      = In ((f †.) . g)
 
 (+.) :: (Σ -> Ω) -> Ω -> Ω
-(+.) _ Bottom     = Bottom
+(+.) _ Bottom      = Bottom
 (+.) _ (Normal σ)  = Normal σ
 (+.) f (Abort σ)   = f σ
 (+.) f (Out (n,ω)) = Out (n, f +. ω)

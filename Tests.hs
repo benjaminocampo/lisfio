@@ -41,14 +41,6 @@ testPrintUptoTen = TestCase $ assertBool "should abort if outputs differs" $
 testAssignAndRestore = TestCase $ assertBool "should assign and restore" $
   checkAllVars (sem assignAndRestore σ) (Out (10, Normal $ update σ "x" 3))
 
--- testFail
--- testAssign
--- testIfElse
--- testSeq
--- testCatch
--- testNewvar
--- testSOut
--- testSIn
--- testWhile
+
 
 main = runTestTT $ TestList [ testIfElse, testOut, testNewvar ]

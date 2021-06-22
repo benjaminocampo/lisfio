@@ -18,7 +18,6 @@ ten  = Const 10
     x := 1
   od
 -}
-
 assignWithIfElse :: Expr Ω
 assignWithIfElse = IfElse (Eq x ten)
   (Assign "x" $ Const 0)
@@ -30,7 +29,6 @@ assignWithIfElse = IfElse (Eq x ten)
     x := x + 1
   od
 -}
-
 printUptoTen :: Expr Ω
 printUptoTen = While (Lte x ten) $ concatSeq
   [ (SOut $ x)
@@ -45,7 +43,6 @@ printUptoTen = While (Lte x ten) $ concatSeq
     y := y + 1
   od
 -}
-
 getUptoTen :: Expr Ω
 getUptoTen = While (Lt y ten) $ concatSeq 
   [ (SIn "x")
@@ -58,11 +55,10 @@ getUptoTen = While (Lt y ten) $ concatSeq
   x := 3 ;
   newvar x := 10 in !x end ;
 -}
-
 assignAndRestore :: Expr Ω
 assignAndRestore = concatSeq
   [ (Assign "x" $ Const 3)
-  , (Newvar "x" ten $ SOut $ x)
+  , (Newvar "x" ten $ SOut x)
   ]
 
 {-
@@ -70,21 +66,32 @@ assignAndRestore = concatSeq
   newvar x := 10 in !x end ;
   !x
 -}
-
 getAndRestore :: Expr Ω
 getAndRestore = concatSeq
   [ (SIn "x")
-  , (Newvar "x" ten $ SOut $ x)
+  , (Newvar "x" ten $ SOut x)
   , (SOut $ x)
   ]
+{-
+  catch x := 1; Fail with x := 0
+-}
+giveControlToFail :: Expr Ω
+giveControlToFail = Catch
+  (Seq (Assign "x" one) Fail)
+  (Assign "x" cero)
+
+{-
+  while True do !x
+-}
+whileTruePrint :: Expr Ω
+whileTruePrint STrue $ SOut x
 
 {-
   while x < 2 do
-    if x < 0 then x:= 0
+    if x < 0 then x := 0
     else x:= x + 1
   od
 -}
-
 g4ex5a :: Expr Ω
 g4ex5a = While (Lt x two) $
   IfElse (Lt x cero)
@@ -93,17 +100,67 @@ g4ex5a = While (Lt x two) $
 
 {-
   while x < 2 do
-    if y = 0 then x:= x + 1
+    if y = 0 then x := x + 1
     else skip
   od
 -}
-
 g4ex5b :: Expr Ω
 g4ex5b = While (Lt x two) $
   IfElse (Eq y cero) $
     (Assign "x" $ Plus x one)
     Skip
 
+{-
+  y:= x + y;
+  if y > 0 then x := x - 1
+  else skip
+-}
 g5ex3a :: Expr Ω
 g5ex3a = Seq
   (Assign "y" $ Plus x y)
+  (IfElse (Gt y cero) (Assign "x" $ Minus x one) Skip)
+
+{-
+  while x > 0 do
+    y:= x + y;
+    if y > 0 then x := x - 1
+    else skip
+-}
+g5ex3b :: Expr Ω
+g5ex3b = While (Gt x 0) g5ex3a
+
+{-
+  newvar x:= 2 in
+    while x > 0 do
+      y:= x + y;
+      if y > 0 then x := x -1
+      else skip
+-}
+g5ex4 :: Expr Ω
+g5ex4 = Newvar "x" two $
+  While (Gt x cero) $ Seq
+    (Assign "y" $ Plus x y)
+    (IfElse (Gt y cero) (Assign "x" $ Minus x one) Skip)
+
+
+{-
+  x := 0;
+  catch
+    while x < 1 do fail od
+  with
+    x:= 0
+-}
+g5ex2ei :: Expr Ω
+g5ex2ei = Seq
+  (Assign "x" cero)
+  (Catch (While (Lt x one) Fail) (Assign "x" cero))
+
+{-
+  x := 0;
+  while x < 1 do
+    catch fail with x := 1
+-}
+g5ex2ei :: Expr Ω
+g5ex2ei = Seq
+  (Assign "x" cero)
+  (While (Lt x one) (Catch Fail $ Assign "x" one))
