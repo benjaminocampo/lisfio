@@ -12,6 +12,14 @@ type Σ = Iden -> Int
 update :: Σ -> Iden -> Int -> Σ
 update σ v n v' = if v == v' then n else σ v'
 
+bot :: Ω
+bot = fix f
+  where f ω = ω
+
+bot' :: Σ -> Ω
+bot' σ = fix f σ
+    where f w σ = w σ
+
 {- Ω ≈ (Σ' + Z × Ω + Z → Ω)⊥ -}
 data Ω = Normal Σ | Abort Σ | Out (Int, Ω) | In (Int -> Ω)
 {- Notar:
@@ -111,7 +119,7 @@ instance DomSem Ω where
   sem (SOut e)        σ = Out (sem e σ, Normal σ)
   sem (SIn v)         σ = In $ \n -> Normal $ update σ v n
   sem (While b c)     σ = fix f σ
-    where f w σ = if sem b σ then (*.) w (sem c σ) else Normal σ
+    where (f w) σ = if sem b σ then w *. (sem c σ) else Normal σ
 
 {- ################# Funciones de evaluación de dom ################# -}
 
